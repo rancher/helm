@@ -56,7 +56,7 @@ func (c *Client) waitForResources(timeout time.Duration, created Result) error {
 		pvc := []v1.PersistentVolumeClaim{}
 		deployments := []deployment{}
 		for _, v := range created {
-			obj, err := c.AsVersionedObject(v.Object)
+			obj, err := v.Versioned()
 			if err != nil && !runtime.IsNotRegisteredError(err) {
 				return false, err
 			}
@@ -74,6 +74,36 @@ func (c *Client) waitForResources(timeout time.Duration, created Result) error {
 				}
 				pods = append(pods, *pod)
 			case *appsv1.Deployment:
+				currentDeployment, err := kcs.ExtensionsV1beta1().Deployments(value.Namespace).Get(value.Name, metav1.GetOptions{})
+				if err != nil {
+					return false, err
+				}
+				// Find RS associated with deployment
+				newReplicaSet, err := deploymentutil.GetNewReplicaSet(currentDeployment, kcs.ExtensionsV1beta1())
+				if err != nil || newReplicaSet == nil {
+					return false, err
+				}
+				newDeployment := deployment{
+					newReplicaSet,
+					currentDeployment,
+				}
+				deployments = append(deployments, newDeployment)
+			case *appsv1beta1.Deployment:
+				currentDeployment, err := kcs.ExtensionsV1beta1().Deployments(value.Namespace).Get(value.Name, metav1.GetOptions{})
+				if err != nil {
+					return false, err
+				}
+				// Find RS associated with deployment
+				newReplicaSet, err := deploymentutil.GetNewReplicaSet(currentDeployment, kcs.ExtensionsV1beta1())
+				if err != nil || newReplicaSet == nil {
+					return false, err
+				}
+				newDeployment := deployment{
+					newReplicaSet,
+					currentDeployment,
+				}
+				deployments = append(deployments, newDeployment)
+			case *appsv1beta2.Deployment:
 				currentDeployment, err := kcs.ExtensionsV1beta1().Deployments(value.Namespace).Get(value.Name, metav1.GetOptions{})
 				if err != nil {
 					return false, err
@@ -109,6 +139,18 @@ func (c *Client) waitForResources(timeout time.Duration, created Result) error {
 					return false, err
 				}
 				pods = append(pods, list...)
+			case *appsv1.DaemonSet:
+				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
+				if err != nil {
+					return false, err
+				}
+				pods = append(pods, list...)
+			case *appsv1beta2.DaemonSet:
+				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
+				if err != nil {
+					return false, err
+				}
+				pods = append(pods, list...)
 			case *appsv1.StatefulSet:
 				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
 				if err != nil {
@@ -128,6 +170,18 @@ func (c *Client) waitForResources(timeout time.Duration, created Result) error {
 				}
 				pods = append(pods, list...)
 			case *extensions.ReplicaSet:
+				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
+				if err != nil {
+					return false, err
+				}
+				pods = append(pods, list...)
+			case *appsv1beta2.ReplicaSet:
+				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
+				if err != nil {
+					return false, err
+				}
+				pods = append(pods, list...)
+			case *appsv1.ReplicaSet:
 				list, err := getPods(kcs, value.Namespace, value.Spec.Selector.MatchLabels)
 				if err != nil {
 					return false, err

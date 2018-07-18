@@ -33,8 +33,11 @@ import (
 	goprom "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/health"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/keepalive"
 
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/helm/pkg/kube"
 	"k8s.io/helm/pkg/proto/hapi/services"
 	"k8s.io/helm/pkg/storage"
@@ -80,6 +83,9 @@ var (
 	caCertFile           = flag.String("tls-ca-cert", tlsDefaultsFromEnv("tls-ca-cert"), "trust certificates signed by this CA")
 	maxHistory           = flag.Int("history-max", historyMaxFromEnv(), "maximum number of releases kept in release history, with 0 meaning no limit")
 	printVersion         = flag.Bool("version", false, "print the version number")
+	user                 = flag.String("user", "", "impersonation user")
+	groups               = flag.String("groups", "", "impersonation groups")
+	probe                = flag.String("probe", probeAddr, "probe address:port to listen")
 
 	// rootServer is the root gRPC server.
 	//
@@ -112,8 +118,14 @@ func main() {
 }
 
 func start() {
+	splitGroups := strings.Split(*groups, ",")
 
-	clientset, err := kube.New(nil).ClientSet()
+	healthSrv := health.NewServer()
+	healthSrv.SetServingStatus("Tiller", healthpb.HealthCheckResponse_NOT_SERVING)
+
+	impersonationConfig := tiller.NewImpersonationClientConfig(&clientcmd.ClientConfigLoadingRules{ExplicitPath: os.Getenv("KUBECONFIG")},
+		&clientcmd.ConfigOverrides{}, *user, splitGroups)
+	clientset, err := kube.New(impersonationConfig).ClientSet()
 	if err != nil {
 		logger.Fatalf("Cannot initialize Kubernetes connection: %s", err)
 	}
@@ -139,7 +151,7 @@ func start() {
 		env.Releases.MaxHistory = *maxHistory
 	}
 
-	kubeClient := kube.New(nil)
+	kubeClient := kube.New(impersonationConfig)
 	kubeClient.Log = newLogger("kube").Printf
 	env.KubeClient = kubeClient
 
@@ -157,13 +169,18 @@ func start() {
 			logger.Fatalf("Could not create server TLS configuration: %v", err)
 		}
 		opts = append(opts, grpc.Creds(credentials.NewTLS(cfg)))
-		opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
-			MaxConnectionIdle: 10 * time.Minute,
-			// If needed, we can configure the max connection age
-		}))
 	}
 
+	opts = append(opts, grpc.KeepaliveParams(keepalive.ServerParameters{
+		MaxConnectionIdle: 10 * time.Minute,
+		// If needed, we can configure the max connection age
+	}))
+	opts = append(opts, grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+		MinTime: time.Duration(20) * time.Second, // For compatibility with the client keepalive.ClientParameters
+	}))
+
 	rootServer = tiller.NewServer(opts...)
+	healthpb.RegisterHealthServer(rootServer, healthSrv)
 
 	lstn, err := net.Listen("tcp", *grpcAddr)
 	if err != nil {
@@ -172,7 +189,7 @@ func start() {
 
 	logger.Printf("Starting Tiller %s (tls=%t)", version.GetVersion(), *tlsEnable || *tlsVerify)
 	logger.Printf("GRPC listening on %s", *grpcAddr)
-	logger.Printf("Probes listening on %s", probeAddr)
+	logger.Printf("Probes listening on %s", *probe)
 	logger.Printf("Storage driver is %s", env.Releases.Name())
 	logger.Printf("Max history per release is %d", *maxHistory)
 
@@ -198,10 +215,12 @@ func start() {
 		goprom.Register(rootServer)
 		addPrometheusHandler(mux)
 
-		if err := http.ListenAndServe(probeAddr, mux); err != nil {
+		if err := http.ListenAndServe(*probe, mux); err != nil {
 			probeErrCh <- err
 		}
 	}()
+
+	healthSrv.SetServingStatus("Tiller", healthpb.HealthCheckResponse_SERVING)
 
 	select {
 	case err := <-srvErrCh:

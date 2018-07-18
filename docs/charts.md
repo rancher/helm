@@ -36,7 +36,7 @@ wordpress/
 Helm reserves use of the `charts/` and `templates/` directories, and of
 the listed file names. Other files will be left as they are.
 
-While the `charts` and `template` directories are optional there must be at least one chart dependency or template file for the chart to be valid.
+While the `charts` and `templates` directories are optional there must be at least one chart dependency or template file for the chart to be valid.
 
 ## The Chart.yaml File
 
@@ -45,6 +45,7 @@ The `Chart.yaml` file is required for a chart. It contains the following fields:
 ```yaml
 name: The name of the chart (required)
 version: A SemVer 2 version (required)
+kubeVersion: A SemVer range of compatible Kubernetes versions (optional)
 description: A single-sentence description of this project (optional)
 keywords:
   - A list of keywords about this project (optional)
@@ -58,7 +59,7 @@ maintainers: # (optional)
 engine: gotpl # The name of the template engine (optional, defaults to gotpl)
 icon: A URL to an SVG or PNG image to be used as an icon (optional).
 appVersion: The version of the app that this contains (optional). This needn't be SemVer.
-deprecated: Whether or not this chart is deprecated (optional, boolean)
+deprecated: Whether this chart is deprecated (optional, boolean)
 tillerVersion: The version of Tiller that this chart requires. This should be expressed as a SemVer range: ">2.0.0" (optional)
 ```
 
@@ -175,7 +176,7 @@ dependencies:
   that you must also use `helm repo add` to add that repo locally.
 
 Once you have a dependencies file, you can run `helm dependency update`
-and it will use your dependency file to download all of the specified
+and it will use your dependency file to download all the specified
 charts into your `charts/` directory for you.
 
 ```console
@@ -276,7 +277,7 @@ dependencies:
         condition: subchart2.enabled,global.subchart2.enabled
         tags:
           - back-end
-          - subchart1
+          - subchart2
 
 ````
 ````
@@ -294,7 +295,7 @@ In the above example all charts with the tag `front-end` would be disabled but s
 `front-end` tag and `subchart1` will be enabled.  
 
 Since `subchart2` is tagged with `back-end` and that tag evaluates to `true`, `subchart2` will be
-enabled. Also note that although `subchart2` has a condition specified in `requirements.yaml`, there
+enabled. Also notes that although `subchart2` has a condition specified in `requirements.yaml`, there
 is no corresponding path and value in the parent's values so that condition has no effect.  
 
 ##### Using the CLI with Tags and Conditions
@@ -325,7 +326,7 @@ tooling to introspect user-settable values.
 The keys containing the values to be imported can be specified in the parent chart's `requirements.yaml` file 
 using a YAML list. Each item in the list is a key which is imported from the child chart's `exports` field. 
 
-To import values not contained in the `exports` key, use the [child/parent](#using-the-child/parent-format) format.
+To import values not contained in the `exports` key, use the [child-parent](#using-the-child-parent-format) format.
 Examples of both formats are described below.
 
 ##### Using the exports format
@@ -360,9 +361,9 @@ myint: 99
 ```
 
 Please note the parent key `data` is not contained in the parent's final values. If you need to specify the 
-parent key, use the 'child/parent' format. 
+parent key, use the 'child-parent' format. 
 
-##### Using the child/parent format
+##### Using the child-parent format
 
 To access values that are not contained in the `exports` key of the child chart's values, you will need to 
 specify the source key of the values to be imported (`child`) and the destination path in the parent chart's 
@@ -849,7 +850,7 @@ considerations in mind:
 - The `Chart.yaml` will be overwritten by the generator.
 - Users will expect to modify such a chart's contents, so documentation
   should indicate how users can do so.
-- All occurances of `<CHARTNAME>` will be replaced with the specified chart
+- All occurences of `<CHARTNAME>` will be replaced with the specified chart
   name so that starter charts can be used as templates.
 
 Currently the only way to add a chart to `$HELM_HOME/starters` is to manually

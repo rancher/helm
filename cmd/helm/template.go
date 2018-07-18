@@ -68,6 +68,7 @@ type templateCmd struct {
 	chartPath    string
 	out          io.Writer
 	values       []string
+	stringValues []string
 	nameTemplate string
 	showNotes    bool
 	releaseName  string
@@ -96,6 +97,7 @@ func newTemplateCmd(out io.Writer) *cobra.Command {
 	f.VarP(&t.valueFiles, "values", "f", "specify values in a YAML file (can specify multiple)")
 	f.StringVar(&t.namespace, "namespace", "", "namespace to install the release into")
 	f.StringArrayVar(&t.values, "set", []string{}, "set values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
+	f.StringArrayVar(&t.stringValues, "set-string", []string{}, "set STRING values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	f.StringVar(&t.nameTemplate, "name-template", "", "specify template used to name the release")
 	f.StringVar(&t.kubeVersion, "kube-version", defaultKubeVersion, "kubernetes version used as Capabilities.KubeVersion.Major/Minor")
 	f.StringVar(&t.outputDir, "output-dir", "", "writes the executed templates to files in output-dir instead of stdout")
@@ -122,7 +124,7 @@ func (t *templateCmd) run(cmd *cobra.Command, args []string) error {
 	if len(t.renderFiles) > 0 {
 		for _, f := range t.renderFiles {
 			if !filepath.IsAbs(f) {
-				af, err = filepath.Abs(t.chartPath + "/" + f)
+				af, err = filepath.Abs(filepath.Join(t.chartPath, f))
 				if err != nil {
 					return fmt.Errorf("could not resolve template path: %s", err)
 				}
@@ -149,7 +151,7 @@ func (t *templateCmd) run(cmd *cobra.Command, args []string) error {
 		t.namespace = defaultNamespace()
 	}
 	// get combined values and create config
-	rawVals, err := vals(t.valueFiles, t.values)
+	rawVals, err := vals(t.valueFiles, t.values, t.stringValues)
 	if err != nil {
 		return err
 	}
@@ -232,9 +234,9 @@ func (t *templateCmd) run(cmd *cobra.Command, args []string) error {
 	}
 	in := func(needle string, haystack []string) bool {
 		// make needle path absolute
-		d := strings.Split(needle, "/")
+		d := strings.Split(needle, string(os.PathSeparator))
 		dd := d[1:]
-		an := t.chartPath + "/" + strings.Join(dd, "/")
+		an := filepath.Join(t.chartPath, strings.Join(dd, string(os.PathSeparator)))
 
 		for _, h := range haystack {
 			if h == an {
@@ -261,7 +263,11 @@ func (t *templateCmd) run(cmd *cobra.Command, args []string) error {
 		}
 		data := m.Content
 		b := filepath.Base(m.Name)
-		if !t.showNotes && b == "NOTES.txt" {
+		if t.showNotes {
+			if b != "NOTES.txt" {
+				continue
+			}
+		} else if b == "NOTES.txt" {
 			continue
 		}
 		if strings.HasPrefix(b, "_") {
