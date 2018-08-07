@@ -104,7 +104,7 @@ func TestKubeClient(t *testing.T) {
 		b.WriteString(content)
 	}
 
-	if err := env.KubeClient.Create("sharry-bobbins", b, 300, false); err != nil {
+	if err := env.KubeClient.Create("", "sharry-bobbins", b, 300, false); err != nil {
 		t.Errorf("Kubeclient failed: %s", err)
 	}
 }

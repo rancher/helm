@@ -368,7 +368,7 @@ func (s *ReleaseServer) execHook(hs []*release.Hook, name, namespace, hook strin
 		}
 
 		b := bytes.NewBufferString(h.Manifest)
-		if err := kubeCli.Create(namespace, b, timeout, false); err != nil {
+		if err := kubeCli.Create(name, namespace, b, timeout, false); err != nil {
 			s.Log("warning: Release %s %s %s failed: %s", name, hook, h.Path, err)
 			return err
 		}

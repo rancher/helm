@@ -102,7 +102,7 @@ type KubeClient interface {
 	//
 	// reader must contain a YAML stream (one or more YAML documents separated
 	// by "\n---\n").
-	Create(namespace string, reader io.Reader, timeout int64, shouldWait bool) error
+	Create(name, namespace string, reader io.Reader, timeout int64, shouldWait bool) error
 
 	// Get gets one or more resources. Returned string hsa the format like kubectl
 	// provides with the column headers separating the resource types.

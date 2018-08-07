@@ -52,7 +52,7 @@ type LocalReleaseModule struct {
 // Create creates a release via kubeclient from provided environment
 func (m *LocalReleaseModule) Create(r *release.Release, req *services.InstallReleaseRequest, env *environment.Environment) error {
 	b := bytes.NewBufferString(r.Manifest)
-	return env.KubeClient.Create(r.Namespace, b, req.Timeout, req.Wait)
+	return env.KubeClient.Create(r.Name, r.Namespace, b, req.Timeout, req.Wait)
 }
 
 // Update performs an update from current to target release

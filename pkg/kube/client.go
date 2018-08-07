@@ -86,7 +86,7 @@ type ResourceActorFunc func(*resource.Info) error
 // Create creates Kubernetes resources from an io.reader.
 //
 // Namespace will set the namespace.
-func (c *Client) Create(namespace string, reader io.Reader, timeout int64, shouldWait bool) error {
+func (c *Client) Create(name, namespace string, reader io.Reader, timeout int64, shouldWait bool) error {
 	client, err := c.ClientSet()
 	if err != nil {
 		return err
@@ -104,6 +104,23 @@ func (c *Client) Create(namespace string, reader io.Reader, timeout int64, shoul
 		if info.Namespace != namespace && info.Namespace != "" {
 			return fmt.Errorf("resource's namespace %s doesn't match the current namespace %s", info.Namespace, namespace)
 		}
+		if name != "" {
+			raw := info.Object.(runtime.Unstructured).UnstructuredContent()
+			label, ok := GetValue(raw, "metadata", "labels")
+			if ok {
+				if v, ok := label.(map[string]interface{}); ok {
+					v["io.cattle.field/appId"] = name
+					PutValue(raw, v, "metadata", "labels")
+				}
+			} else {
+				v := map[string]interface{}{
+					"io.cattle.field/appId": name,
+				}
+				PutValue(raw, v, "metadata", "labels")
+			}
+			info.Object.(runtime.Unstructured).SetUnstructuredContent(raw)
+		}
+
 	}
 	c.Log("creating %d resource(s)", len(infos))
 	if err := perform(infos, createResource); err != nil {
@@ -113,6 +130,45 @@ func (c *Client) Create(namespace string, reader io.Reader, timeout int64, shoul
 		return c.waitForResources(time.Duration(timeout)*time.Second, infos)
 	}
 	return nil
+}
+
+func GetValue(data map[string]interface{}, keys ...string) (interface{}, bool) {
+	for i, key := range keys {
+		if i == len(keys)-1 {
+			val, ok := data[key]
+			return val, ok
+		}
+		data, _ = data[key].(map[string]interface{})
+	}
+
+	return nil, false
+}
+
+func PutValue(data map[string]interface{}, val interface{}, keys ...string) {
+	if data == nil {
+		return
+	}
+
+	// This is so ugly
+	for i, key := range keys {
+		if i == len(keys)-1 {
+			data[key] = val
+		} else {
+			newData, ok := data[key]
+			if ok {
+				newMap, ok := newData.(map[string]interface{})
+				if ok {
+					data = newMap
+				} else {
+					return
+				}
+			} else {
+				newMap := map[string]interface{}{}
+				data[key] = newMap
+				data = newMap
+			}
+		}
+	}
 }
 
 func (c *Client) newBuilder(namespace string, reader io.Reader) *resource.Result {

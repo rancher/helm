@@ -367,13 +367,13 @@ func TestPerform(t *testing.T) {
 func TestReal(t *testing.T) {
 	t.Skip("This is a live test, comment this line to run")
 	c := New(nil)
-	if err := c.Create("test", strings.NewReader(guestbookManifest), 300, false); err != nil {
+	if err := c.Create("", "test", strings.NewReader(guestbookManifest), 300, false); err != nil {
 		t.Fatal(err)
 	}
 
 	testSvcEndpointManifest := testServiceManifest + "\n---\n" + testEndpointManifest
 	c = New(nil)
-	if err := c.Create("test-delete", strings.NewReader(testSvcEndpointManifest), 300, false); err != nil {
+	if err := c.Create("", "test-delete", strings.NewReader(testSvcEndpointManifest), 300, false); err != nil {
 		t.Fatal(err)
 	}
 
