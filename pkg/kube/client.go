@@ -120,7 +120,6 @@ func (c *Client) Create(name, namespace string, reader io.Reader, timeout int64,
 			}
 			info.Object.(runtime.Unstructured).SetUnstructuredContent(raw)
 		}
-
 	}
 	c.Log("creating %d resource(s)", len(infos))
 	if err := perform(infos, createResource); err != nil {
@@ -434,7 +433,7 @@ func perform(infos Result, fn ResourceActorFunc) error {
 
 func createResource(info *resource.Info) error {
 	obj, err := resource.NewHelper(info.Client, info.Mapping).Create(info.Namespace, true, info.Object)
-	if err != nil {
+	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
 	}
 	return info.Refresh(obj, true)
