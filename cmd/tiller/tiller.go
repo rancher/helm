@@ -201,18 +201,22 @@ func start() {
 
 	srvErrCh := make(chan error)
 	probeErrCh := make(chan error)
-	go func() {
+	done := make(chan struct{})
+	go func(done chan <- struct{}) {
 		svc := tiller.NewReleaseServer(env, clientset, *remoteReleaseModules)
 		svc.Log = newLogger("tiller").Printf
 		services.RegisterReleaseServiceServer(rootServer, svc)
+		done <- struct{}{}
 		if err := rootServer.Serve(lstn); err != nil {
 			srvErrCh <- err
 		}
-	}()
+	}(done)
 
-	go func() {
+	go func(done <- chan struct{}) {
 		mux := newProbesMux()
 
+		// wait for the first go routine to register services
+		<- done
 		// Register gRPC server to prometheus to initialized matrix
 		goprom.Register(rootServer)
 		addPrometheusHandler(mux)
@@ -220,7 +224,7 @@ func start() {
 		if err := http.ListenAndServe(*probe, mux); err != nil {
 			probeErrCh <- err
 		}
-	}()
+	}(done)
 
 	healthSrv.SetServingStatus("Tiller", healthpb.HealthCheckResponse_SERVING)
 
