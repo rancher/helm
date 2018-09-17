@@ -1,0 +1,37 @@
+---
+pipeline:
+  build:
+    image: golang:1.10
+    environment:
+    - PROJECT_NAME: "kubernetes-helm"
+    commands:
+    - ./.circleci/bootstrap.sh
+    - make test-unit
+    - make build
+
+  publish-github-rc:
+    image: plugins/github-release
+    prerelease: true
+    files:
+     - bin/*
+    checksum:
+     - sha256
+    secrets: [github_token]
+    when:
+      branch: [rancher]
+      event: tag
+      ref:
+        include: [ refs/tags/*rc* ]
+
+  github_binary_release:
+    image: plugins/github-release
+    files:
+     - bin/*
+    checksum:
+     - sha256
+    secrets: [github_token]
+    when:
+      branch: [rancher]
+      event: tag
+      ref:
+        exclude: [ refs/tags/*rc* ]
