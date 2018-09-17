@@ -119,7 +119,7 @@ type runesToVal func([]rune) (interface{}, error)
 
 func newParser(sc *bytes.Buffer, data map[string]interface{}, stringBool bool) *parser {
 	rs2v := func(rs []rune) (interface{}, error) {
-		return rancherTypedVal(rs)
+		return typedVal(rs, stringBool), nil
 	}
 	return &parser{sc: sc, data: data, runesToVal: rs2v}
 }
@@ -395,30 +395,4 @@ func typedVal(v []rune, st bool) interface{} {
 	}
 
 	return val
-}
-
-// rancherTypedVal parse value based on prefix like string:, boolean:, int:
-func rancherTypedVal(v []rune) (interface{}, error) {
-	val := string(v)
-
-	parts := strings.SplitN(val, ":", 2)
-	if len(parts) == 2 {
-		t := parts[0]
-		switch t {
-		case "string":
-			return parts[1], nil
-		case "boolean":
-			return strconv.ParseBool(parts[1])
-		case "float64":
-			return strconv.ParseFloat(parts[1], 64)
-		case "int":
-			return strconv.ParseInt(parts[1], 10, 64)
-		case "obj":
-			if strings.EqualFold(parts[1], "null") {
-				return nil, nil
-			}
-		}
-	}
-	// fallback to old one
-	return typedVal(v, false), nil
 }
