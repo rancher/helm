@@ -265,6 +265,8 @@ func GetVersionSet(client discovery.ServerGroupsInterface) (chartutil.VersionSet
 func (s *ReleaseServer) renderResources(ch *chart.Chart, values chartutil.Values, vs chartutil.VersionSet) ([]*release.Hook, *bytes.Buffer, string, error) {
 	// Guard to make sure Tiller is at the right version to handle this chart.
 	sver := version.GetVersion()
+	// since our rancher version will always be va.b.c-rancherX, we only take the first part before dash into comparison
+	sver = strings.SplitN(sver, "-", 2)[0]
 	if ch.Metadata.TillerVersion != "" &&
 		!version.IsCompatibleRange(ch.Metadata.TillerVersion, sver) {
 		return nil, nil, "", fmt.Errorf("Chart incompatible with Tiller %s", sver)
