@@ -3,7 +3,7 @@ pipeline:
   build:
     image: golang:1.10
     environment:
-    - PROJECT_NAME: "kubernetes-helm"
+    - PROJECT_NAME="kubernetes-helm"
     commands:
     - ./.circleci/bootstrap.sh
     - make test-unit
