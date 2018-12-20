@@ -433,6 +433,21 @@ func perform(infos Result, fn ResourceActorFunc) error {
 }
 
 func createResource(info *resource.Info) error {
+	// create resource with additional label of the force-upgrade option
+	raw := info.Object.(runtime.Unstructured).UnstructuredContent()
+	label, ok := GetValue(raw, "metadata", "labels")
+	if ok {
+		if v, ok := label.(map[string]interface{}); ok {
+			v["io.cattle.field/appId"] = info.Name
+			PutValue(raw, v, "metadata", "labels")
+		}
+	} else {
+		v := map[string]interface{}{
+			"io.cattle.field/appId": info.Name,
+		}
+		PutValue(raw, v, "metadata", "labels")
+	}
+	info.Object.(runtime.Unstructured).SetUnstructuredContent(raw)
 	obj, err := resource.NewHelper(info.Client, info.Mapping).Create(info.Namespace, true, info.Object)
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return err
