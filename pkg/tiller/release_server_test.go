@@ -503,7 +503,7 @@ func (kc *mockHooksKubeClient) makeManifest(r io.Reader) (*mockHooksManifest, er
 
 	return manifest, nil
 }
-func (kc *mockHooksKubeClient) Create(ns string, r io.Reader, timeout int64, shouldWait bool) error {
+func (kc *mockHooksKubeClient) Create(rn, ns string, r io.Reader, timeout int64, shouldWait bool) error {
 	manifest, err := kc.makeManifest(r)
 	if err != nil {
 		return err

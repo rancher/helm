@@ -40,7 +40,7 @@ func (e *mockEngine) Render(chrt *chart.Chart, v chartutil.Values) (map[string]s
 
 type mockKubeClient struct{}
 
-func (k *mockKubeClient) Create(ns string, r io.Reader, timeout int64, shouldWait bool) error {
+func (k *mockKubeClient) Create(rn, ns string, r io.Reader, timeout int64, shouldWait bool) error {
 	return nil
 }
 func (k *mockKubeClient) Get(ns string, r io.Reader) (string, error) {

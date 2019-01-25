@@ -1,4 +1,8 @@
 ---
+workspace:
+  base: /go
+  path: /src/k8s.io/helm
+
 pipeline:
   build:
     image: golang:1.10
