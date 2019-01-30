@@ -299,7 +299,7 @@ func (c *Client) Get(namespace string, reader io.Reader) (string, error) {
 // not present in the target configuration.
 //
 // Namespace will set the namespaces.
-func (c *Client) Update(namespace string, originalReader, targetReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
+func (c *Client) Update(name, namespace string, originalReader, targetReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
 	original, err := c.BuildUnstructured(namespace, originalReader)
 	if err != nil {
 		return fmt.Errorf("failed decoding reader into objects: %s", err)
@@ -341,7 +341,7 @@ func (c *Client) Update(namespace string, originalReader, targetReader io.Reader
 			return fmt.Errorf("no %s with the name %q found", kind, info.Name)
 		}
 
-		if err := updateResource(c, info, originalInfo.Object, force, recreate); err != nil {
+		if err := updateResource(name, c, info, originalInfo.Object, force, recreate); err != nil {
 			c.Log("error updating the resource %q:\n\t %v", info.Name, err)
 			updateErrors = append(updateErrors, err.Error())
 		}
@@ -433,17 +433,25 @@ func perform(infos Result, fn ResourceActorFunc) error {
 }
 
 func createResource(info *resource.Info) error {
-	// create resource with additional label of the force-upgrade option
+	obj, err := resource.NewHelper(info.Client, info.Mapping).Create(info.Namespace, true, info.Object)
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return err
+	}
+	return info.Refresh(obj, true)
+}
+
+func recreateResource(info *resource.Info, name string) error {
+	// recreate resource with additional label of the force-upgrade option
 	raw := info.Object.(runtime.Unstructured).UnstructuredContent()
 	label, ok := GetValue(raw, "metadata", "labels")
 	if ok {
 		if v, ok := label.(map[string]interface{}); ok {
-			v["io.cattle.field/appId"] = info.Name
+			v["io.cattle.field/appId"] = name
 			PutValue(raw, v, "metadata", "labels")
 		}
 	} else {
 		v := map[string]interface{}{
-			"io.cattle.field/appId": info.Name,
+			"io.cattle.field/appId": name,
 		}
 		PutValue(raw, v, "metadata", "labels")
 	}
@@ -508,7 +516,7 @@ func createPatch(target *resource.Info, current runtime.Object) ([]byte, types.P
 	}
 }
 
-func updateResource(c *Client, target *resource.Info, currentObj runtime.Object, force bool, recreate bool) error {
+func updateResource(name string, c *Client, target *resource.Info, currentObj runtime.Object, force bool, recreate bool) error {
 	patch, patchType, err := createPatch(target, currentObj)
 	if err != nil {
 		return fmt.Errorf("failed to create patch: %s", err)
@@ -537,7 +545,7 @@ func updateResource(c *Client, target *resource.Info, currentObj runtime.Object,
 				log.Printf("Deleted %s: %q", kind, target.Name)
 
 				// ... and recreate
-				if err := createResource(target); err != nil {
+				if err := recreateResource(target, name); err != nil {
 					return fmt.Errorf("Failed to recreate resource: %s", err)
 				}
 				log.Printf("Created a new %s called %q\n", kind, target.Name)
