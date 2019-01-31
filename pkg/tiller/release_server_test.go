@@ -431,7 +431,7 @@ type updateFailingKubeClient struct {
 	environment.PrintingKubeClient
 }
 
-func (u *updateFailingKubeClient) Update(namespace string, originalReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
+func (u *updateFailingKubeClient) Update(name, namespace string, originalReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
 	return errors.New("Failed update in kube client")
 }
 
@@ -547,7 +547,7 @@ func (kc *mockHooksKubeClient) WatchUntilReady(ns string, r io.Reader, timeout i
 
 	return nil
 }
-func (kc *mockHooksKubeClient) Update(ns string, currentReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
+func (kc *mockHooksKubeClient) Update(n, ns string, currentReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
 	return nil
 }
 func (kc *mockHooksKubeClient) Build(ns string, reader io.Reader) (kube.Result, error) {

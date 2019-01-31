@@ -185,7 +185,7 @@ func TestUpdate(t *testing.T) {
 	rf := &fakeReaperFactory{Factory: tf, reaper: reaper}
 	c.Client.Factory = rf
 	codec := legacyscheme.Codecs.LegacyCodec(scheme.Versions...)
-	if err := c.Update(core.NamespaceDefault, objBody(codec, &listA), objBody(codec, &listB), false, false, 0, false); err != nil {
+	if err := c.Update("name", core.NamespaceDefault, objBody(codec, &listA), objBody(codec, &listB), false, false, 0, false); err != nil {
 		t.Fatal(err)
 	}
 	// TODO: Find a way to test methods that use Client Set
