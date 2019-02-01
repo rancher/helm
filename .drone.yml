@@ -17,9 +17,15 @@ steps:
   commands:
   - ./.circleci/bootstrap.sh
   - make test-unit
-  - make build
+  - make build-cross APP=helm
+  - make build-cross APP=tiller
+  - make build-cross APP=rudder
+  - mv ./_dist/linux-arm64/helm ./_dist/linux-arm64/helm-arm64
+  - mv ./_dist/linux-arm64/tiller ./_dist/linux-arm64/tiller-arm64
+  - mv ./_dist/linux-arm64/rudder ./_dist/linux-arm64/rudder-arm64
   environment:
     PROJECT_NAME: "\"kubernetes-helm\""
+    TARGETS: linux/amd64 linux/arm64
 
 - name: publish-github-rc
   pull: default
@@ -31,6 +37,8 @@ steps:
     - sha256
     files:
     - "bin/*"
+    - _dist/linux-amd64/*
+    - _dist/linux-arm64/*
     prerelease: true
   when:
     event:
@@ -47,13 +55,13 @@ steps:
     - sha256
     files:
     - "bin/*"
+    - _dist/linux-amd64/*
+    - _dist/linux-arm64/*
     api_key:
       from_secret: github_token
   when:
     event:
     - tag
     ref:
-      include:
-      - refs/heads/rancher
       exclude:
-      - refs/heads/rancher
+      - "refs/tags/*rc*"
