@@ -326,7 +326,7 @@ func (c *Client) Update(name, namespace string, originalReader, targetReader io.
 			}
 
 			// Since the resource does not exist, create it.
-			if err := createResource(info); err != nil {
+			if err := createResourceWithAppID(info, name); err != nil {
 				return fmt.Errorf("failed to create resource: %s", err)
 			}
 
@@ -440,8 +440,8 @@ func createResource(info *resource.Info) error {
 	return info.Refresh(obj, true)
 }
 
-func recreateResource(info *resource.Info, name string) error {
-	// recreate resource with additional label of the force-upgrade option
+func createResourceWithAppID(info *resource.Info, name string) error {
+	// create resource with additional appId label
 	raw := info.Object.(runtime.Unstructured).UnstructuredContent()
 	label, ok := GetValue(raw, "metadata", "labels")
 	if ok {
@@ -545,7 +545,7 @@ func updateResource(name string, c *Client, target *resource.Info, currentObj ru
 				log.Printf("Deleted %s: %q", kind, target.Name)
 
 				// ... and recreate
-				if err := recreateResource(target, name); err != nil {
+				if err := createResourceWithAppID(target, name); err != nil {
 					return fmt.Errorf("Failed to recreate resource: %s", err)
 				}
 				log.Printf("Created a new %s called %q\n", kind, target.Name)
