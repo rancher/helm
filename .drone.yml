@@ -1,41 +1,59 @@
 ---
+kind: pipeline
+name: default
+
+platform:
+  os: linux
+  arch: amd64
+
 workspace:
   base: /go
   path: /src/k8s.io/helm
 
-pipeline:
-  build:
-    image: golang:1.10
-    environment:
-    - PROJECT_NAME="kubernetes-helm"
-    commands:
-    - ./.circleci/bootstrap.sh
-    - make test-unit
-    - make build
+steps:
+- name: build
+  pull: default
+  image: golang:1.10
+  commands:
+  - ./.circleci/bootstrap.sh
+  - make test-unit
+  - make build
+  environment:
+    PROJECT_NAME: "\"kubernetes-helm\""
 
-  publish-github-rc:
-    image: plugins/github-release
+- name: publish-github-rc
+  pull: default
+  image: plugins/github-release
+  settings:
+    api_key:
+      from_secret: github_token
+    checksum:
+    - sha256
+    files:
+    - "bin/*"
     prerelease: true
-    files:
-     - bin/*
-    checksum:
-     - sha256
-    secrets: [github_token]
-    when:
-      branch: [rancher]
-      event: tag
-      ref:
-        include: [ refs/tags/*rc* ]
+  when:
+    event:
+    - tag
+    ref:
+    - "refs/tags/*rc*"
+    - refs/heads/rancher
 
-  github_binary_release:
-    image: plugins/github-release
-    files:
-     - bin/*
+- name: github_binary_release
+  pull: default
+  image: plugins/github-release
+  settings:
     checksum:
-     - sha256
-    secrets: [github_token]
-    when:
-      branch: [rancher]
-      event: tag
-      ref:
-        exclude: [ refs/tags/*rc* ]
+    - sha256
+    files:
+    - "bin/*"
+    api_key:
+      from_secret: github_token
+  when:
+    event:
+    - tag
+    ref:
+      include:
+      - refs/heads/rancher
+      exclude:
+      - refs/heads/rancher
