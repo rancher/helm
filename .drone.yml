@@ -23,9 +23,12 @@ steps:
   - mv ./_dist/linux-arm64/helm ./_dist/linux-arm64/helm-arm64
   - mv ./_dist/linux-arm64/tiller ./_dist/linux-arm64/tiller-arm64
   - mv ./_dist/linux-arm64/rudder ./_dist/linux-arm64/rudder-arm64
+  - mv ./_dist/linux-arm/helm ./_dist/linux-arm/helm-arm
+  - mv ./_dist/linux-arm/tiller ./_dist/linux-arm/tiller-arm
+  - mv ./_dist/linux-arm/rudder ./_dist/linux-arm/rudder-arm
   environment:
     PROJECT_NAME: "\"kubernetes-helm\""
-    TARGETS: linux/amd64 linux/arm64
+    TARGETS: linux/amd64 linux/arm64 linux/arm
 
 - name: publish-github-rc
   pull: default
@@ -39,6 +42,7 @@ steps:
     - "bin/*"
     - _dist/linux-amd64/*
     - _dist/linux-arm64/*
+    - _dist/linux-arm/*
     prerelease: true
   when:
     instance:
@@ -59,6 +63,7 @@ steps:
     - "bin/*"
     - _dist/linux-amd64/*
     - _dist/linux-arm64/*
+    - _dist/linux-arm/*
     api_key:
       from_secret: github_token
   when:
