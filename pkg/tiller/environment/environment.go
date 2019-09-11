@@ -108,7 +108,7 @@ type KubeClient interface {
 	//
 	// reader must contain a YAML stream (one or more YAML documents separated
 	// by "\n---\n").
-	Create(namespace string, reader io.Reader, timeout int64, shouldWait bool) error
+	Create(name, namespace string, reader io.Reader, timeout int64, shouldWait bool) error
 
 	// Get gets one or more resources. Returned string hsa the format like kubectl
 	// provides with the column headers separating the resource types.
@@ -145,7 +145,7 @@ type KubeClient interface {
 	WatchUntilReady(namespace string, reader io.Reader, timeout int64, shouldWait bool) error
 
 	// Deprecated; use UpdateWithOptions instead
-	Update(namespace string, originalReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error
+	Update(name, namespace string, originalReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error
 
 	// UpdateWithOptions updates one or more resources or creates the resource
 	// if it doesn't exist.
@@ -154,7 +154,7 @@ type KubeClient interface {
 	//
 	// reader must contain a YAML stream (one or more YAML documents separated
 	// by "\n---\n").
-	UpdateWithOptions(namespace string, originalReader, modifiedReader io.Reader, opts kube.UpdateOptions) error
+	UpdateWithOptions(name, namespace string, originalReader, modifiedReader io.Reader, opts kube.UpdateOptions) error
 
 	Build(namespace string, reader io.Reader) (kube.Result, error)
 
@@ -185,7 +185,7 @@ type PrintingKubeClient struct {
 }
 
 // Create prints the values of what would be created with a real KubeClient.
-func (p *PrintingKubeClient) Create(ns string, r io.Reader, timeout int64, shouldWait bool) error {
+func (p *PrintingKubeClient) Create(name, ns string, r io.Reader, timeout int64, shouldWait bool) error {
 	_, err := io.Copy(p.Out, r)
 	return err
 }
@@ -219,8 +219,8 @@ func (p *PrintingKubeClient) WatchUntilReady(ns string, r io.Reader, timeout int
 }
 
 // Update implements KubeClient Update.
-func (p *PrintingKubeClient) Update(ns string, currentReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
-	return p.UpdateWithOptions(ns, currentReader, modifiedReader, kube.UpdateOptions{
+func (p *PrintingKubeClient) Update(name, ns string, currentReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
+	return p.UpdateWithOptions(name, ns, currentReader, modifiedReader, kube.UpdateOptions{
 		Force:      force,
 		Recreate:   recreate,
 		Timeout:    timeout,
@@ -229,7 +229,7 @@ func (p *PrintingKubeClient) Update(ns string, currentReader, modifiedReader io.
 }
 
 // UpdateWithOptions implements KubeClient UpdateWithOptions.
-func (p *PrintingKubeClient) UpdateWithOptions(ns string, currentReader, modifiedReader io.Reader, opts kube.UpdateOptions) error {
+func (p *PrintingKubeClient) UpdateWithOptions(name, ns string, currentReader, modifiedReader io.Reader, opts kube.UpdateOptions) error {
 	_, err := io.Copy(p.Out, modifiedReader)
 	return err
 }

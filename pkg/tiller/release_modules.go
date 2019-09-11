@@ -51,14 +51,14 @@ type LocalReleaseModule struct {
 // Create creates a release via kubeclient from provided environment
 func (m *LocalReleaseModule) Create(r *release.Release, req *services.InstallReleaseRequest, env *environment.Environment) error {
 	b := bytes.NewBufferString(r.Manifest)
-	return env.KubeClient.Create(r.Namespace, b, req.Timeout, req.Wait)
+	return env.KubeClient.Create(r.Name, r.Namespace, b, req.Timeout, req.Wait)
 }
 
 // Update performs an update from current to target release
 func (m *LocalReleaseModule) Update(current, target *release.Release, req *services.UpdateReleaseRequest, env *environment.Environment) error {
 	c := bytes.NewBufferString(current.Manifest)
 	t := bytes.NewBufferString(target.Manifest)
-	return env.KubeClient.UpdateWithOptions(target.Namespace, c, t, kube.UpdateOptions{
+	return env.KubeClient.UpdateWithOptions(target.Name, target.Namespace, c, t, kube.UpdateOptions{
 		Force:         req.Force,
 		Recreate:      req.Recreate,
 		Timeout:       req.Timeout,
@@ -71,7 +71,7 @@ func (m *LocalReleaseModule) Update(current, target *release.Release, req *servi
 func (m *LocalReleaseModule) Rollback(current, target *release.Release, req *services.RollbackReleaseRequest, env *environment.Environment) error {
 	c := bytes.NewBufferString(current.Manifest)
 	t := bytes.NewBufferString(target.Manifest)
-	return env.KubeClient.UpdateWithOptions(target.Namespace, c, t, kube.UpdateOptions{
+	return env.KubeClient.UpdateWithOptions(target.Name, target.Namespace, c, t, kube.UpdateOptions{
 		Force:         req.Force,
 		Recreate:      req.Recreate,
 		Timeout:       req.Timeout,

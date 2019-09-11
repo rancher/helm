@@ -229,7 +229,11 @@ func (t *templateCmd) run(cmd *cobra.Command, args []string) error {
 	for _, m := range tiller.SortByKind(manifestsToRender) {
 		data := m.Content
 		b := filepath.Base(m.Name)
-		if !t.showNotes && b == "NOTES.txt" {
+		if t.showNotes {
+			if b != "NOTES.txt" {
+				continue
+			}
+		} else if b == "NOTES.txt" {
 			continue
 		}
 		if strings.HasPrefix(b, "_") {

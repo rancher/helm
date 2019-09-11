@@ -91,7 +91,7 @@ func (r *ReleaseModuleServiceServer) Version(ctx context.Context, in *rudderAPI.
 func (r *ReleaseModuleServiceServer) InstallRelease(ctx context.Context, in *rudderAPI.InstallReleaseRequest) (*rudderAPI.InstallReleaseResponse, error) {
 	grpclog.Print("install")
 	b := bytes.NewBufferString(in.Release.Manifest)
-	err := kubeClient.Create(in.Release.Namespace, b, 500, false)
+	err := kubeClient.Create(in.Release.Name, in.Release.Namespace, b, 500, false)
 	if err != nil {
 		grpclog.Printf("error when creating release: %v", err)
 	}
@@ -131,7 +131,7 @@ func (r *ReleaseModuleServiceServer) RollbackRelease(ctx context.Context, in *ru
 	grpclog.Print("rollback")
 	c := bytes.NewBufferString(in.Current.Manifest)
 	t := bytes.NewBufferString(in.Target.Manifest)
-	err := kubeClient.UpdateWithOptions(in.Target.Namespace, c, t, kube.UpdateOptions{
+	err := kubeClient.UpdateWithOptions(in.Target.Name, in.Target.Namespace, c, t, kube.UpdateOptions{
 		Force:         in.Force,
 		Recreate:      in.Recreate,
 		Timeout:       in.Timeout,
@@ -146,7 +146,7 @@ func (r *ReleaseModuleServiceServer) UpgradeRelease(ctx context.Context, in *rud
 	grpclog.Print("upgrade")
 	c := bytes.NewBufferString(in.Current.Manifest)
 	t := bytes.NewBufferString(in.Target.Manifest)
-	err := kubeClient.UpdateWithOptions(in.Target.Namespace, c, t, kube.UpdateOptions{
+	err := kubeClient.UpdateWithOptions(in.Target.Name, in.Target.Namespace, c, t, kube.UpdateOptions{
 		Force:         in.Force,
 		Recreate:      in.Recreate,
 		Timeout:       in.Timeout,
