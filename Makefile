@@ -32,8 +32,8 @@ build:
 .PHONY: build-cross
 build-cross: LDFLAGS += -extldflags "-static"
 build-cross:
-	CGO_ENABLED=0 gox -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/{{.Dir}}" -osarch='$(TARGETS)' $(GOFLAGS) $(if $(TAGS),-tags '$(TAGS)',) -ldflags '$(LDFLAGS)' k8s.io/helm/cmd/helm
-	CGO_ENABLED=0 gox -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/{{.Dir}}" -osarch='$(TARGETS)' $(GOFLAGS) $(if $(TAGS),-tags '$(TAGS)',) -ldflags '$(LDFLAGS)' k8s.io/helm/cmd/tiller
+	CGO_ENABLED=0 gox -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/rancher-helm" -osarch='$(TARGETS)' $(GOFLAGS) $(if $(TAGS),-tags '$(TAGS)',) -ldflags '$(LDFLAGS)' k8s.io/helm/cmd/helm
+	CGO_ENABLED=0 gox -parallel=3 -output="_dist/{{.OS}}-{{.Arch}}/rancher-tiller" -osarch='$(TARGETS)' $(GOFLAGS) $(if $(TAGS),-tags '$(TAGS)',) -ldflags '$(LDFLAGS)' k8s.io/helm/cmd/tiller
 
 .PHONY: dist
 dist:
@@ -156,6 +156,9 @@ clean:
 .PHONY: coverage
 coverage:
 	@scripts/coverage.sh
+
+.PHONY: release
+release: bootstrap build
 
 HAS_GLIDE := $(shell command -v glide;)
 HAS_GOX := $(shell command -v gox;)

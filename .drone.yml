@@ -1,0 +1,68 @@
+---
+kind: pipeline
+name: default
+
+platform:
+  os: linux
+  arch: amd64
+
+workspace:
+  base: /go
+  path: /src/k8s.io/helm
+
+steps:
+  - name: build
+    pull: default
+    image: golang:1.12.9
+    commands:
+      - ./.circleci/bootstrap.sh
+      - make test-unit
+      - make build-cross
+      - mv ./_dist/linux-arm64/rancher-helm ./_dist/linux-arm64/rancher-helm-arm64
+      - mv ./_dist/linux-arm64/rancher-tiller ./_dist/linux-arm64/rancher-tiller-arm64
+    environment:
+      PROJECT_NAME: '"kubernetes-helm"'
+      TARGETS: linux/amd64 linux/arm64
+
+  - name: publish-github-rc
+    pull: default
+    image: plugins/github-release
+    settings:
+      api_key:
+        from_secret: github_token
+      checksum:
+        - sha256
+      files:
+        - "bin/*"
+        - _dist/linux-amd64/*
+        - _dist/linux-arm64/*
+      prerelease: true
+    when:
+      instance:
+        - drone-publish.rancher.io
+      event:
+        - tag
+      ref:
+        - "refs/tags/*rc*"
+        - refs/heads/rancher
+
+  - name: github_binary_release
+    pull: default
+    image: plugins/github-release
+    settings:
+      checksum:
+        - sha256
+      files:
+        - "bin/*"
+        - _dist/linux-amd64/*
+        - _dist/linux-arm64/*
+      api_key:
+        from_secret: github_token
+    when:
+      instance:
+        - drone-publish.rancher.io
+      event:
+        - tag
+      ref:
+        exclude:
+          - "refs/tags/*rc*"
