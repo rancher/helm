@@ -178,6 +178,6 @@ func newCreateFailingKubeClient() *createFailingKubeClient {
 	}
 }
 
-func (p *createFailingKubeClient) Create(ns string, r io.Reader, t int64, shouldWait bool) error {
+func (p *createFailingKubeClient) Create(name, ns string, r io.Reader, t int64, shouldWait bool) error {
 	return errors.New("We ran out of budget and couldn't create finding-nemo")
 }

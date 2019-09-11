@@ -499,8 +499,8 @@ type updateFailingKubeClient struct {
 	environment.PrintingKubeClient
 }
 
-func (u *updateFailingKubeClient) Update(namespace string, originalReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
-	return u.UpdateWithOptions(namespace, originalReader, modifiedReader, kube.UpdateOptions{
+func (u *updateFailingKubeClient) Update(name, namespace string, originalReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
+	return u.UpdateWithOptions(name, namespace, originalReader, modifiedReader, kube.UpdateOptions{
 		Force:      force,
 		Recreate:   recreate,
 		Timeout:    timeout,
@@ -508,7 +508,7 @@ func (u *updateFailingKubeClient) Update(namespace string, originalReader, modif
 	})
 }
 
-func (u *updateFailingKubeClient) UpdateWithOptions(namespace string, originalReader, modifiedReader io.Reader, opts kube.UpdateOptions) error {
+func (u *updateFailingKubeClient) UpdateWithOptions(name, namespace string, originalReader, modifiedReader io.Reader, opts kube.UpdateOptions) error {
 	return errors.New("Failed update in kube client")
 }
 
@@ -598,7 +598,7 @@ func (kc *mockHooksKubeClient) makeManifest(r io.Reader) (*mockHooksManifest, er
 
 	return manifest, nil
 }
-func (kc *mockHooksKubeClient) Create(ns string, r io.Reader, timeout int64, shouldWait bool) error {
+func (kc *mockHooksKubeClient) Create(name, ns string, r io.Reader, timeout int64, shouldWait bool) error {
 	manifest, err := kc.makeManifest(r)
 	if err != nil {
 		return err
@@ -645,10 +645,10 @@ func (kc *mockHooksKubeClient) WatchUntilReady(ns string, r io.Reader, timeout i
 
 	return nil
 }
-func (kc *mockHooksKubeClient) Update(ns string, currentReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
+func (kc *mockHooksKubeClient) Update(name, ns string, currentReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
 	return nil
 }
-func (kc *mockHooksKubeClient) UpdateWithOptions(ns string, currentReader, modifiedReader io.Reader, opts kube.UpdateOptions) error {
+func (kc *mockHooksKubeClient) UpdateWithOptions(name, ns string, currentReader, modifiedReader io.Reader, opts kube.UpdateOptions) error {
 	return nil
 }
 func (kc *mockHooksKubeClient) Build(ns string, reader io.Reader) (kube.Result, error) {

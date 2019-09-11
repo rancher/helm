@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -200,7 +200,7 @@ func TestUpdate(t *testing.T) {
 		Log:     nopLogger,
 	}
 
-	if err := c.Update(v1.NamespaceDefault, objBody(&listA), objBody(&listB), false, false, 0, false); err != nil {
+	if err := c.Update("", v1.NamespaceDefault, objBody(&listA), objBody(&listB), false, false, 0, false); err != nil {
 		t.Fatal(err)
 	}
 	// TODO: Find a way to test methods that use Client Set
@@ -236,7 +236,7 @@ func TestUpdate(t *testing.T) {
 	// Test resource policy is respected
 	actions = nil
 	listA.Items[2].ObjectMeta.Annotations = map[string]string{ResourcePolicyAnno: "keep"}
-	if err := c.Update(v1.NamespaceDefault, objBody(&listA), objBody(&listB), false, false, 0, false); err != nil {
+	if err := c.Update("", v1.NamespaceDefault, objBody(&listA), objBody(&listB), false, false, 0, false); err != nil {
 		t.Fatal(err)
 	}
 	for _, v := range actions {
@@ -274,7 +274,7 @@ func TestUpdateNonManagedResourceError(t *testing.T) {
 		Log:     nopLogger,
 	}
 
-	if err := c.Update(v1.NamespaceDefault, objBody(&current), objBody(&target), false, false, 0, false); err != nil {
+	if err := c.Update("", v1.NamespaceDefault, objBody(&current), objBody(&target), false, false, 0, false); err != nil {
 		if err.Error() != "kind Pod with the name \"starfish\" already exists in the cluster and wasn't defined in the previous release. Before upgrading, please either delete the resource from the cluster or remove it from the chart" {
 			t.Fatal(err)
 		}
@@ -647,13 +647,13 @@ func TestPerform(t *testing.T) {
 func TestReal(t *testing.T) {
 	t.Skip("This is a live test, comment this line to run")
 	c := New(nil)
-	if err := c.Create("test", strings.NewReader(guestbookManifest), 300, false); err != nil {
+	if err := c.Create("", "test", strings.NewReader(guestbookManifest), 300, false); err != nil {
 		t.Fatal(err)
 	}
 
 	testSvcEndpointManifest := testServiceManifest + "\n---\n" + testEndpointManifest
 	c = New(nil)
-	if err := c.Create("test-delete", strings.NewReader(testSvcEndpointManifest), 300, false); err != nil {
+	if err := c.Create("", "test-delete", strings.NewReader(testSvcEndpointManifest), 300, false); err != nil {
 		t.Fatal(err)
 	}
 

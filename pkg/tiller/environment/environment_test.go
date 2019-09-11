@@ -40,7 +40,7 @@ func (e *mockEngine) Render(chrt *chart.Chart, v chartutil.Values) (map[string]s
 
 type mockKubeClient struct{}
 
-func (k *mockKubeClient) Create(ns string, r io.Reader, timeout int64, shouldWait bool) error {
+func (k *mockKubeClient) Create(name, ns string, r io.Reader, timeout int64, shouldWait bool) error {
 	return nil
 }
 func (k *mockKubeClient) Get(ns string, r io.Reader) (string, error) {
@@ -52,10 +52,10 @@ func (k *mockKubeClient) Delete(ns string, r io.Reader) error {
 func (k *mockKubeClient) DeleteWithTimeout(ns string, r io.Reader, timeout int64, shouldWait bool) error {
 	return nil
 }
-func (k *mockKubeClient) Update(ns string, currentReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
+func (k *mockKubeClient) Update(name, ns string, currentReader, modifiedReader io.Reader, force bool, recreate bool, timeout int64, shouldWait bool) error {
 	return nil
 }
-func (k *mockKubeClient) UpdateWithOptions(ns string, currentReader, modifiedReader io.Reader, opts kube.UpdateOptions) error {
+func (k *mockKubeClient) UpdateWithOptions(name, ns string, currentReader, modifiedReader io.Reader, opts kube.UpdateOptions) error {
 	return nil
 }
 func (k *mockKubeClient) WatchUntilReady(ns string, r io.Reader, timeout int64, shouldWait bool) error {
@@ -117,7 +117,7 @@ func TestKubeClient(t *testing.T) {
 		b.WriteString(content)
 	}
 
-	if err := env.KubeClient.Create("sharry-bobbins", b, 300, false); err != nil {
+	if err := env.KubeClient.Create("", "sharry-bobbins", b, 300, false); err != nil {
 		t.Errorf("Kubeclient failed: %s", err)
 	}
 }
