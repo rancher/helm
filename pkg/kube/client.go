@@ -115,10 +115,6 @@ func (c *Client) Create(name, namespace string, reader io.Reader, timeout int64,
 		return buildErr
 	}
 	for _, info := range infos {
-		// if resource is created under a namespace we have to make sure the namespace matches
-		if info.Namespace != namespace && info.Namespace != "" {
-			return fmt.Errorf("resource's namespace %s doesn't match the current namespace %s", info.Namespace, namespace)
-		}
 		if name != "" {
 			raw := info.Object.(runtime.Unstructured).UnstructuredContent()
 			label, ok := GetValue(raw, "metadata", "labels")
