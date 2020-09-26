@@ -22,7 +22,7 @@ PKG        := ./...
 TAGS       :=
 TESTS      := .
 TESTFLAGS  :=
-LDFLAGS    := -w -s
+LDFLAGS    := -w -s -extldflags "-static"
 GOFLAGS    :=
 
 # Rebuild the binary if any of these files change
