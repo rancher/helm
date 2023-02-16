@@ -22,7 +22,7 @@ PKG         := ./...
 TAGS        :=
 TESTS       := .
 TESTFLAGS   :=
-LDFLAGS     := -w -s
+LDFLAGS     := -w -s -extldflags "-static"
 GOFLAGS     :=
 CGO_ENABLED ?= 0
 
