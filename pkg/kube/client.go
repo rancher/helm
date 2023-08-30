@@ -289,7 +289,7 @@ func (c *Client) Wait(resources ResourceList, timeout time.Duration) error {
 	}
 	checker := NewReadyChecker(cs, c.Log, PausedAsReady(true))
 	w := waiter{
-		c:       checker,
+		c: checker,
 		log: func(s string, i ...interface{}) {
 			fmt.Printf(s+"\n", i...)
 		},
