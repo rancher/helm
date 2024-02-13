@@ -71,7 +71,6 @@ type Install struct {
 
 	ClientOnly               bool
 	Force                    bool
-	ForceAdopt               bool
 	CreateNamespace          bool
 	DryRun                   bool
 	DryRunOption             string
@@ -106,7 +105,9 @@ type Install struct {
 	// Used by helm template to add the release as part of OutputDir path
 	// OutputDir/<ReleaseName>
 	UseReleaseName bool
-	PostRenderer   postrender.PostRenderer
+	// TakeOwnership will ignore the check for helm annotations and take ownership of the resources.
+	TakeOwnership bool
+	PostRenderer  postrender.PostRenderer
 	// Lock to control raceconditions when the process receives a SIGTERM
 	Lock sync.Mutex
 }
@@ -336,7 +337,7 @@ func (i *Install) RunWithContext(ctx context.Context, chrt *chart.Chart, vals ma
 	// deleting the release because the manifest will be pointing at that
 	// resource
 	if !i.ClientOnly && !isUpgrade && len(resources) > 0 {
-		toBeAdopted, err = existingResourceConflict(resources, rel.Name, rel.Namespace, i.ForceAdopt)
+		toBeAdopted, err = existingResourceConflict(resources, rel.Name, rel.Namespace, i.TakeOwnership)
 		if err != nil {
 			return nil, errors.Wrap(err, "Unable to continue with install")
 		}
