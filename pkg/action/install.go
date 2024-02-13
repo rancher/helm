@@ -72,7 +72,6 @@ type Install struct {
 
 	ClientOnly      bool
 	Force           bool
-	ForceAdopt      bool
 	CreateNamespace bool
 	DryRun          bool
 	DryRunOption    string
@@ -352,7 +351,7 @@ func (i *Install) RunWithContext(ctx context.Context, chrt *chart.Chart, vals ma
 		if i.TakeOwnership {
 			toBeAdopted, err = requireAdoption(resources)
 		} else {
-			toBeAdopted, err = existingResourceConflict(resources, rel.Name, rel.Namespace, i.ForceAdopt)
+			toBeAdopted, err = existingResourceConflict(resources, rel.Name, rel.Namespace, i.TakeOwnership)
 		}
 		if err != nil {
 			return nil, errors.Wrap(err, "Unable to continue with install")
