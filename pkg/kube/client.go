@@ -289,8 +289,10 @@ func (c *Client) Wait(resources ResourceList, timeout time.Duration) error {
 	}
 	checker := NewReadyChecker(cs, c.Log, PausedAsReady(true))
 	w := waiter{
-		c:       checker,
-		log:     c.Log,
+		c: checker,
+		log: func(s string, i ...interface{}) {
+			fmt.Printf(s+"\n", i...)
+		},
 		timeout: timeout,
 	}
 	return w.waitForResources(resources)
@@ -304,8 +306,10 @@ func (c *Client) WaitWithJobs(resources ResourceList, timeout time.Duration) err
 	}
 	checker := NewReadyChecker(cs, c.Log, PausedAsReady(true), CheckJobs(true))
 	w := waiter{
-		c:       checker,
-		log:     c.Log,
+		c: checker,
+		log: func(s string, i ...interface{}) {
+			fmt.Printf(s+"\n", i...)
+		},
 		timeout: timeout,
 	}
 	return w.waitForResources(resources)
