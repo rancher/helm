@@ -4,6 +4,10 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes/helm)](https://goreportcard.com/report/github.com/kubernetes/helm)
 [![GoDoc](https://godoc.org/github.com/kubernetes/helm?status.svg)](https://godoc.org/github.com/kubernetes/helm)
 
+> [!IMPORTANT]
+> This branch (`master`) is not used for anything. To see an active
+> branch, please checkout a `release-*` branch.
+
 Helm is a tool for managing Kubernetes charts. Charts are packages of
 pre-configured Kubernetes resources.
 
