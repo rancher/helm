@@ -40,19 +40,6 @@ func checkPerms() {
 			// can proceed happily without a KUBECONFIG, so this is not a fatal error.
 			return
 		}
-		kc = filepath.Join(u.HomeDir, ".kube", "config")
-	}
-	fi, err := os.Stat(kc)
-	if err != nil {
-		// DO NOT error if no KubeConfig is found. Not all commands require one.
-		return
-	}
-
-	perm := fi.Mode().Perm()
-	if perm&0040 > 0 {
-		warning("Kubernetes configuration file is group-readable. This is insecure. Location: %s", kc)
-	}
-	if perm&0004 > 0 {
-		warning("Kubernetes configuration file is world-readable. This is insecure. Location: %s", kc)
+		_ = filepath.Join(u.HomeDir, ".kube", "config")
 	}
 }
