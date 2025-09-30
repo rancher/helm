@@ -23,12 +23,26 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/resource"
 
 	"helm.sh/helm/v3/pkg/kube"
 )
 
-var accessor = meta.NewAccessor()
+var (
+	accessor = meta.NewAccessor()
+
+	provisioningClusterGVK = schema.GroupVersionKind{
+		Group:   "provisioning.cattle.io",
+		Version: "v1",
+		Kind:    "Cluster",
+	}
+
+	MachineConfigGV = schema.GroupVersion{
+		Group:   "rke-machine-config.cattle.io",
+		Version: "v1",
+	}
+)
 
 const (
 	appManagedByLabel              = "app.kubernetes.io/managed-by"
@@ -62,7 +76,7 @@ func requireAdoption(resources kube.ResourceList) (kube.ResourceList, error) {
 	return requireUpdate, err
 }
 
-func existingResourceConflict(resources kube.ResourceList, releaseName, releaseNamespace string) (kube.ResourceList, error) {
+func existingResourceConflict(resources kube.ResourceList, releaseName, releaseNamespace string, takeOwnership bool) (kube.ResourceList, error) {
 	var requireUpdate kube.ResourceList
 
 	err := resources.Visit(func(info *resource.Info, err error) error {
@@ -73,15 +87,17 @@ func existingResourceConflict(resources kube.ResourceList, releaseName, releaseN
 		helper := resource.NewHelper(info.Client, info.Mapping)
 		existing, err := helper.Get(info.Namespace, info.Name)
 		if err != nil {
-			if apierrors.IsNotFound(err) {
+			if apierrors.IsNotFound(err) || shouldIgnore(info, err) {
 				return nil
 			}
 			return errors.Wrapf(err, "could not get information about the resource %s", resourceString(info))
 		}
 
-		// Allow adoption of the resource if it is managed by Helm and is annotated with correct release name and namespace.
-		if err := checkOwnership(existing, releaseName, releaseNamespace); err != nil {
-			return fmt.Errorf("%s exists and cannot be imported into the current release: %s", resourceString(info), err)
+		if !takeOwnership {
+			// Allow adoption of the resource if it is managed by Helm and is annotated with correct release name and namespace.
+			if err := checkOwnership(existing, releaseName, releaseNamespace); err != nil {
+				return fmt.Errorf("%s exists and cannot be imported into the current release: %s", resourceString(info), err)
+			}
 		}
 
 		requireUpdate.Append(info)
@@ -89,6 +105,20 @@ func existingResourceConflict(resources kube.ResourceList, releaseName, releaseN
 	})
 
 	return requireUpdate, err
+}
+
+// If resource is cluster.provisioning.cattle.io or *.rke-machine-config.cattle.io, we should ignore permission error.
+// This is because standard user in rancher won't have the permission to check it until they have created it. Issue: https://github.com/rancher/rancher/issues/34277#issuecomment-901308458
+func shouldIgnore(info *resource.Info, err error) bool {
+	if info.Mapping != nil {
+		if info.Mapping.GroupVersionKind == provisioningClusterGVK || info.Mapping.GroupVersionKind.GroupVersion() == MachineConfigGV {
+			if apierrors.IsForbidden(err) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func checkOwnership(obj runtime.Object, releaseName, releaseNamespace string) error {
